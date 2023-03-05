@@ -23,12 +23,7 @@ I thought for sure it had something to do with `closest_named_hex`, but i couldn
 
 ## Preview the project
 This project is written in Vue3 with composition api, with Tailwind for styling.
-
-### Recommended IDE Setup
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
-
-### Customize configuration
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+I hosted it here for quick viewing: https://nc-swatches.netlify.app/
 
 ### Project Setup
 ```sh
@@ -44,4 +39,8 @@ npm run dev
 ```sh
 npm run build
 ```
+### Recommended IDE Setup
+[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
 
+### Customize configuration
+See [Vite Configuration Reference](https://vitejs.dev/config/).
