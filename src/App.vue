@@ -1,7 +1,7 @@
 <template>
 	<div class="colors flex flex-col gap-2 h-screen">
 		<form
-			class="form flex bottom-0 right-0 flex-col p-6 m-4 w-2/5 md:w-80 md:p-10 md:m-10"
+			class="form flex flex-col p-6 m-4 w-1/2 md:w-80 md:p-10 md:m-10"
 			@submit.prevent="submitColors"
 		>
 			<h1 class="text-xl md:text-3xl">Color Swatches</h1>
@@ -19,18 +19,22 @@
 			<button
 				type="submit"
 				class="bg-gray-100 p-2"
+                :class="{ disabled : state.loading }"
 			>
 				Submit
 			</button>
 		</form>
 
 		<template v-if="storedColors.length === 0">
-			<p class="status text-3xl text-gray-300 text-center p-6">No swatches here, go ahead and generate some.</p>
+			<div class="status text-3xl text-gray-300 text-center p-6 m-auto">
+                <span v-if="state.loading">Loading...</span>
+                <span v-else>No swatches here, go ahead and generate some.</span>
+            </div>
 		</template>
 		<template v-else>
 			<Color
-				v-for="color in storedColors"
-				:key="color.name"
+				v-for="(color, i) in storedColors"
+				:key="i"
 				:name="color.name"
 				:textColor="color.contrast"
 				:bgColor="color.rgb"
@@ -43,14 +47,36 @@
 import { reactive, computed } from "vue"
 import Color from "./components/Color.vue"
 
-const increment = 10
+//global vars
+
+const increment = 6
 const url = "https://www.thecolorapi.com/id"
 let checkPoints = []
+
+//reactive state
 
 const state = reactive({
 	storage: [],
 	form: { s: undefined, l: undefined, showMsg: undefined },
+    loading: false
 })
+
+//computed
+
+const storedColors = computed(() => {
+    //return the stored state array to the template
+	return storageIndex.value !== -1 ? state.storage[storageIndex.value].colors : []
+})
+
+const storageIndex = computed(() => {
+	return state.storage.findIndex((combo) => state.form.s === combo.s && state.form.l === combo.l)
+})
+
+const isStored = computed(() => {
+	return state.storage.some((combo) => state.form.s === combo.s && state.form.l === combo.l)
+})
+
+//methods
 
 const submitColors = async (e) => {
 	let s = e.target[0].value
@@ -58,9 +84,8 @@ const submitColors = async (e) => {
 
 	resetState()
 
-	//validate entries
+	//validate user entries
 	if (![s, l].every((input) => validateForm(input))) {
-		//its invalid
 		return false
 	}
 
@@ -73,12 +98,11 @@ const submitColors = async (e) => {
 		//setup storage
 		state.storage.push({ s: state.form.s, l: state.form.l, colors: [] })
 		//create the checkpoints, then make all the requests
-		console.log("not stored.. go fetch")
+        state.loading = true
 		await fetchCheckPoints()
-		fetchColors()
+		await fetchColors()
+        state.loading = false
 	}
-
-	console.log("swatch count", storedColors.value.length)
 }
 
 const validateForm = (input) => {
@@ -93,21 +117,9 @@ const validateForm = (input) => {
 	return true
 }
 
-const storedColors = computed(() => {
-	console.log(storageIndex.value)
-	return storageIndex.value !== -1 ? state.storage[storageIndex.value].colors : []
-})
-
-const storageIndex = computed(() => {
-	return state.storage.findIndex((combo) => state.form.s === combo.s && state.form.l === combo.l)
-})
-
-const isStored = computed(() => {
-	return state.storage.some((combo) => state.form.s === combo.s && state.form.l === combo.l)
-})
-
 const fetchCheckPoints = async () => {
-	//initially create an array of colors to use as checkpoints
+	//initially create an array of colors to use as checkpoints (to sample the whole). 
+    //jump to colors with the same name to cut down on requests
 	for (let i = 0; i < 360; i = i + increment) {
 		const res = await fetch(`${url}?hsl=${i},${state.form.s}%,${state.form.l}%`)
 		const data = await res.json()
@@ -121,17 +133,19 @@ const fetchCheckPoints = async () => {
 }
 
 const fetchColors = async () => {
-	//this holds the always current color, initial will always be first checkpoint color
+	//this holds the always current color obj, initial will always be first checkpoint color
 	let color = checkPoints[0]
 	state.storage[storageIndex.value].colors.push(color)
 
-	console.log("checkPoints", checkPoints)
+	//x is the checkpoint counter
 	let x = 0
 	for (const check of checkPoints) {
 		if (check.name !== color.name) {
 			//go count up hues by 1
 			for (let i = 0; i < increment; i++) {
-				const res = await fetch(`${url}?hsl=${(x - 1) * increment + (i + 1)},${state.form.s}%,${state.form.l}%`)
+                //i is the hue counter, here's a magic formula
+                let hslRequest = (x - 1) * increment + (i + 1)
+				const res = await fetch(`${url}?hsl=${hslRequest},${state.form.s}%,${state.form.l}%`)
 				const data = await res.json()
 				const resColor = {
 					hue: data.hsl.h,
@@ -141,21 +155,21 @@ const fetchColors = async () => {
 				}
 
 				if (resColor.name !== color.name) {
+                    //if there's a color that is between steps, set & store the color
 					color = resColor
 					state.storage[storageIndex.value].colors.push(color)
 				}
 
 				if (check.name === color.name) {
+                    //if the color matche the next checkpoint, skip to it!
 					color = check
 					break
 				}
 
 				//debugger;
 			}
-			console.log("loop starts here")
 		} else {
-			//jump the hue to the next check
-			console.log("x same color", x, color)
+			//the name matches, so jump the color to the next checkpoint
 			color = check
 		}
 
