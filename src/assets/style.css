@@ -1,3 +1,47 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Utility */
+
+.disabled {
+    @apply opacity-50 pointer-events-none cursor-default;
+}
+
+/* Transition */
+
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  @apply opacity-100;
+}
+
+/* Color component */
+
+span.bg-color {
+    @apply opacity-0;
+    transition: .5s opacity;
+}
+
+.color:hover span.bg-color {
+    @apply opacity-40;
+}
+
+/* input, button {
+    @apply w-1/2;
+} */
+
+input {
+    @apply border-solid border-gray-300 border-2 p-2;
+}
+
+/* Form  */
+
+.form {
+    @apply fixed bg-white shadow-2xl border-gray-100 gap-4;
+    min-width: 128px;
+}
