@@ -79,6 +79,7 @@ const isStored = computed(() => {
 //methods
 
 const submitColors = async (e) => {
+    //get the user inputs
 	let s = e.target[0].value
 	let l = e.target[1].value
 
@@ -106,9 +107,7 @@ const submitColors = async (e) => {
 }
 
 const validateForm = (input) => {
-    const number = parseFloat(input)
-
-	if (!input || isNaN(number) || number < 0 || number > 100) {
+	if (!input || isNaN(input) || input < 0 || input > 100) {
         state.form.showMsg = true
 		return false
 	}
@@ -124,16 +123,16 @@ const fetchCheckPoints = async () => {
 		const res = await fetch(`${url}?hsl=${i},${state.form.s}%,${state.form.l}%`)
 		const data = await res.json()
 		checkPoints.push({
-			hue: data.hsl.h,
-			name: data.name.value,
-			rgb: data.rgb.value,
-			contrast: data.contrast.value,
+            name: data.name.value,
+            rgb: data.rgb.value,
+            contrast: data.contrast.value
 		})
 	}
 }
 
 const fetchColors = async () => {
-	//this holds the always current color obj, initial will always be first checkpoint color
+    //if samples match eachother, skip ahead
+	//color = always current color obj, initial will always be first checkpoint color
 	let color = checkPoints[0]
 	state.storage[storageIndex.value].colors.push(color)
 
@@ -141,14 +140,13 @@ const fetchColors = async () => {
 	let x = 0
 	for (const check of checkPoints) {
 		if (check.name !== color.name) {
-			//go count up hues by 1
+			//go count up hues by 1, til a new color is found
 			for (let i = 0; i < increment; i++) {
                 //i is the hue counter, here's a magic formula
                 let hslRequest = (x - 1) * increment + (i + 1)
 				const res = await fetch(`${url}?hsl=${hslRequest},${state.form.s}%,${state.form.l}%`)
 				const data = await res.json()
 				const resColor = {
-					hue: data.hsl.h,
 					name: data.name.value,
 					rgb: data.rgb.value,
 					contrast: data.contrast.value,
