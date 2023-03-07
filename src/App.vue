@@ -21,10 +21,9 @@
 				class="bg-gray-100 p-2"
                 :class="{ disabled : state.loading }"
 			>
-				Submit
+				Get swatches
 			</button>
 		</form>
-
 		<template v-if="storedColors.length === 0">
 			<div class="status text-3xl text-gray-300 text-center p-6 m-auto">
                 <span v-if="state.loading">Loading...</span>
