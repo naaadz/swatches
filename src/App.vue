@@ -27,6 +27,7 @@
 		<template v-if="storedColors.length === 0">
 			<div class="status text-3xl text-gray-300 text-center p-6 m-auto">
                 <span v-if="state.loading">Loading...</span>
+                <span v-else-if="state.error">Sorry there was an error. Please try again.</span>
                 <span v-else>No swatches here, go ahead and generate some.</span>
             </div>
 		</template>
@@ -57,7 +58,8 @@ let checkPoints = []
 const state = reactive({
 	storage: [],
 	form: { s: undefined, l: undefined, showMsg: undefined },
-    loading: false
+    loading: false,
+    error: false
 })
 
 //computed
@@ -99,8 +101,14 @@ const submitColors = async (e) => {
 		state.storage.push({ s: state.form.s, l: state.form.l, colors: [] })
 		//create the checkpoints, then make all the requests
         state.loading = true
-		await fetchCheckPoints()
-		await fetchColors()
+        try {
+            await fetchCheckPoints()
+		    await fetchColors()
+            state.error = false
+        } catch (e) {
+            console.log('nice error:', e)
+            state.error = true
+        }
         state.loading = false
 	}
 }
@@ -115,17 +123,26 @@ const validateForm = (input) => {
 	return true
 }
 
+const goFetch = async (url) => {
+    try {
+        const res = await fetch(url)
+	    return await res.json()
+    } catch(e) {
+        console.log('nice error:', e)
+        return e
+    }
+}
+
 const fetchCheckPoints = async () => {
 	//initially create an array of colors to use as checkpoints (to sample the whole). 
     //jump to colors with the same name to cut down on requests
 	for (let i = 0; i < 360; i = i + increment) {
-		const res = await fetch(`${url}?hsl=${i},${state.form.s}%,${state.form.l}%`)
-		const data = await res.json()
-		checkPoints.push({
+		const data = await goFetch(`${url}?hsl=${i},${state.form.s}%,${state.form.l}%`)
+        checkPoints.push({
             name: data.name.value,
             rgb: data.rgb.value,
             contrast: data.contrast.value
-		})
+        })
 	}
 }
 
@@ -143,8 +160,7 @@ const fetchColors = async () => {
 			for (let i = 0; i < increment; i++) {
                 //i is the hue counter, here's a magic formula
                 let hslRequest = (x - 1) * increment + (i + 1)
-				const res = await fetch(`${url}?hsl=${hslRequest},${state.form.s}%,${state.form.l}%`)
-				const data = await res.json()
+                const data = await goFetch(`${url}?hsl=${hslRequest},${state.form.s}%,${state.form.l}%`)
 				const resColor = {
 					name: data.name.value,
 					rgb: data.rgb.value,
